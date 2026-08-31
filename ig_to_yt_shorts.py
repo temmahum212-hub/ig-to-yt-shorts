@@ -1,7 +1,7 @@
 import os
 import argparse
 import pickle
-from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
@@ -10,17 +10,21 @@ from yt_dlp import YoutubeDL
 SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
 
 def get_authenticated_service():
-    # Doğrudan GitHub Secrets'tan okunan bilgilerle oturum açıyoruz
-    creds = Credentials(
-        token=None,
-        refresh_token=os.environ.get('YT_REFRESH_TOKEN'),
-        client_id=os.environ.get('YT_CLIENT_ID'),
-        client_secret=os.environ.get('YT_CLIENT_SECRET'),
-        token_uri="https://oauth2.googleapis.com/token"
-    )
-    
-    if creds and creds.expired and creds.refresh_token:
-        creds.refresh(Request())
+    creds = None
+    # Doğrudan repodaki token.pickle dosyasını arıyoruz
+    if os.path.exists('token.pickle'):
+        with open('token.pickle', 'rb') as token:
+            creds = pickle.load(token)
+            
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            # client_secrets.json dosyasını kullanarak kimlik doğrulama akışını başlatıyoruz
+            flow = InstalledAppFlow.from_client_secrets_file('client_secrets.json', SCOPES)
+            creds = flow.run_local_server(port=0)
+        with open('token.pickle', 'wb') as token:
+            pickle.dump(creds, token)
 
     return build('youtube', 'v3', credentials=creds)
 
