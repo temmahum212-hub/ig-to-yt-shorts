@@ -1,7 +1,6 @@
 import os
 import argparse
-import pickle
-from google_auth_oauthlib.flow import InstalledAppFlow
+from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
@@ -10,21 +9,17 @@ from yt_dlp import YoutubeDL
 SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
 
 def get_authenticated_service():
-    creds = None
-    # Doğrudan repodaki token.pickle dosyasını arıyoruz
-    if os.path.exists('token.pickle'):
-        with open('token.pickle', 'rb') as token:
-            creds = pickle.load(token)
-            
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            # client_secrets.json dosyasını kullanarak kimlik doğrulama akışını başlatıyoruz
-            flow = InstalledAppFlow.from_client_secrets_file('client_secrets.json', SCOPES)
-            creds = flow.run_local_server(port=0)
-        with open('token.pickle', 'wb') as token:
-            pickle.dump(creds, token)
+    # Doğrudan elimizdeki bilgilerle (tarayıcı açmadan) kimlik doğruluyoruz
+    creds = Credentials(
+        token=None,
+        refresh_token="1//04oTwPp4U9UCgYIARAAGAcSNwF-L9IrYdkF3JEgWcoxmxHun5Whqp0A6LH1gjMBM2UAg5nlBcbv-IOK4h146P54dNv9kBM9aRs",
+        client_id="644890746233-s72ol3jbbdflac45msb277eeml3629pg.apps.googleusercontent.com",
+        client_secret="GOCSPX-0vTozAIPnlsPGGaxv0V5EdD68.Jjb",
+        token_uri="https://oauth2.googleapis.com/token"
+    )
+    
+    if creds and creds.expired and creds.refresh_token:
+        creds.refresh(Request())
 
     return build('youtube', 'v3', credentials=creds)
 
